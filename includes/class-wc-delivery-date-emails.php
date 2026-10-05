@@ -24,6 +24,9 @@ class WC_Delivery_Date_Emails {
 		// Output in email order meta (fallback for custom email templates & themes)
 		add_action( 'woocommerce_email_order_meta', array( __CLASS__, 'add_delivery_to_emails' ), 15, 4 );
 
+		// Fallback for custom email designers (Kadence, YayMail, Email Customizer)
+		add_action( 'woocommerce_email_customer_details', array( __CLASS__, 'add_delivery_to_emails' ), 5, 4 );
+
 		// Standard WooCommerce email order meta fields filter
 		add_filter( 'woocommerce_email_order_meta_fields', array( __CLASS__, 'add_delivery_to_email_meta_fields' ), 10, 3 );
 
@@ -33,6 +36,7 @@ class WC_Delivery_Date_Emails {
 
 	/**
 	 * Helper to retrieve normalized delivery details from order
+	 * Checks order meta, all known Blocks prefixes, metadata iteration, user meta, and active session
 	 *
 	 * @param WC_Order|int $order
 	 * @return array|false
@@ -50,28 +54,93 @@ class WC_Delivery_Date_Emails {
 			return false;
 		}
 
-		// Retrieve date from all possible meta keys (Blocks, Classic & HPOS)
-		$date = $order->get_meta( '_delivery_date' );
-		if ( empty( $date ) ) {
-			$date = $order->get_meta( 'wc-delivery-date/delivery-date' );
-		}
-		if ( empty( $date ) ) {
-			$date = $order->get_meta( '_wc-delivery-date/delivery-date' );
-		}
-		if ( empty( $date ) ) {
-			$date = $order->get_meta( 'delivery_date' );
+		// 1. Direct meta keys on the order
+		$date_keys = array(
+			'_delivery_date',
+			'wc-delivery-date/delivery-date',
+			'_wc-delivery-date/delivery-date',
+			'_wc_contact/wc-delivery-date/delivery-date',
+			'_wc_order/wc-delivery-date/delivery-date',
+			'_wc_other/wc-delivery-date/delivery-date',
+			'_wc_address/wc-delivery-date/delivery-date',
+			'delivery_date',
+			'_delivery_date_formatted',
+		);
+
+		$date = '';
+		foreach ( $date_keys as $k ) {
+			$val = $order->get_meta( $k );
+			if ( ! empty( $val ) ) {
+				$date = $val;
+				break;
+			}
 		}
 
-		// Retrieve time from all possible meta keys
-		$time = $order->get_meta( '_delivery_time' );
-		if ( empty( $time ) ) {
-			$time = $order->get_meta( 'wc-delivery-date/delivery-time' );
+		// 2. Scan all order metadata objects for any delivery-date key
+		if ( empty( $date ) && method_exists( $order, 'get_meta_data' ) ) {
+			foreach ( $order->get_meta_data() as $meta_obj ) {
+				$meta_data = is_object( $meta_obj ) && method_exists( $meta_obj, 'get_data' ) ? $meta_obj->get_data() : (array) $meta_obj;
+				$key = isset( $meta_data['key'] ) ? $meta_data['key'] : '';
+				if ( stripos( $key, 'delivery-date' ) !== false || stripos( $key, 'delivery_date' ) !== false ) {
+					$val = isset( $meta_data['value'] ) ? $meta_data['value'] : '';
+					if ( ! empty( $val ) ) {
+						$date = $val;
+						break;
+					}
+				}
+			}
 		}
-		if ( empty( $time ) ) {
-			$time = $order->get_meta( '_wc-delivery-date/delivery-time' );
+
+		// 3. Fallback: check customer user meta if logged in
+		if ( empty( $date ) && $order->get_customer_id() > 0 ) {
+			foreach ( $date_keys as $k ) {
+				$val = get_user_meta( $order->get_customer_id(), $k, true );
+				if ( ! empty( $val ) ) {
+					$date = $val;
+					break;
+				}
+			}
 		}
-		if ( empty( $time ) ) {
-			$time = $order->get_meta( 'delivery_time' );
+
+		// 4. Fallback: check active WooCommerce session
+		if ( empty( $date ) && function_exists( 'WC' ) && WC()->session ) {
+			$date = WC()->session->get( 'wc_delivery_date' );
+		}
+
+		// 5. Fallback: check WooCommerce customer object
+		if ( empty( $date ) && function_exists( 'WC' ) && WC()->customer ) {
+			$date = WC()->customer->get_meta( '_delivery_date' );
+			if ( empty( $date ) ) {
+				$date = WC()->customer->get_meta( 'wc-delivery-date/delivery-date' );
+			}
+		}
+
+		// Time keys
+		$time_keys = array(
+			'_delivery_time',
+			'wc-delivery-date/delivery-time',
+			'_wc-delivery-date/delivery-time',
+			'_wc_contact/wc-delivery-date/delivery-time',
+			'_wc_order/wc-delivery-date/delivery-time',
+			'_wc_other/wc-delivery-date/delivery-time',
+			'delivery_time',
+		);
+
+		$time = '';
+		foreach ( $time_keys as $k ) {
+			$val = $order->get_meta( $k );
+			if ( ! empty( $val ) ) {
+				$time = $val;
+				break;
+			}
+		}
+
+		if ( empty( $time ) && function_exists( 'WC' ) && WC()->session ) {
+			$time = WC()->session->get( 'wc_delivery_time' );
+		}
+
+		if ( empty( $time ) && function_exists( 'WC' ) && WC()->customer ) {
+			$time = WC()->customer->get_meta( '_delivery_time' );
 		}
 
 		if ( empty( $date ) && empty( $time ) ) {
@@ -159,8 +228,10 @@ class WC_Delivery_Date_Emails {
 		}
 
 		$order_id = $order->get_id();
-		if ( isset( self::$rendered_orders[ $order_id ] ) ) {
-			return; // Avoid duplicate render if multiple email hooks trigger
+		$email_id = is_object( $email ) && isset( $email->id ) ? $email->id : ( $sent_to_admin ? 'admin' : 'customer' );
+		$dedup_key = $email_id . '_' . $order_id;
+		if ( isset( self::$rendered_orders[ $dedup_key ] ) ) {
+			return; // Avoid duplicate render within the same email
 		}
 
 		$details = self::get_order_delivery_details( $order );
@@ -168,7 +239,7 @@ class WC_Delivery_Date_Emails {
 			return;
 		}
 
-		self::$rendered_orders[ $order_id ] = true;
+		self::$rendered_orders[ $dedup_key ] = true;
 		$options = wp_parse_args( get_option( WC_Delivery_Date_Settings::OPTION_NAME, array() ), WC_Delivery_Date_Settings::get_defaults() );
 		?>
 		<div style="margin-bottom: 25px; margin-top: 20px;">
@@ -217,10 +288,27 @@ class WC_Delivery_Date_Emails {
 			return;
 		}
 
+		if ( is_numeric( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+
+		$order_id = $order->get_id();
+		$email_id = is_object( $email ) && isset( $email->id ) ? $email->id : ( $sent_to_admin ? 'admin' : 'customer' );
+		$dedup_key = 'plain_' . $email_id . '_' . $order_id;
+		if ( isset( self::$rendered_orders[ $dedup_key ] ) ) {
+			return;
+		}
+
 		$details = self::get_order_delivery_details( $order );
 		if ( ! $details ) {
 			return;
 		}
+
+		self::$rendered_orders[ $dedup_key ] = true;
 
 		$options = wp_parse_args( get_option( WC_Delivery_Date_Settings::OPTION_NAME, array() ), WC_Delivery_Date_Settings::get_defaults() );
 

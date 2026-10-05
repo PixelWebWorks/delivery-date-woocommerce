@@ -12,6 +12,8 @@ class WC_Delivery_Date_AJAX {
 	public static function init() {
 		add_action( 'wp_ajax_wc_delivery_date_check_availability', array( __CLASS__, 'check_availability' ) );
 		add_action( 'wp_ajax_nopriv_wc_delivery_date_check_availability', array( __CLASS__, 'check_availability' ) );
+		add_action( 'wp_ajax_wc_delivery_date_save_time_slot', array( __CLASS__, 'save_time_slot' ) );
+		add_action( 'wp_ajax_nopriv_wc_delivery_date_save_time_slot', array( __CLASS__, 'save_time_slot' ) );
 	}
 
 	/**
@@ -40,9 +42,28 @@ class WC_Delivery_Date_AJAX {
 			}
 		}
 
+		// Persist valid delivery date in WooCommerce session immediately
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			WC()->session->set( 'wc_delivery_date', $date );
+			$formatted = date_i18n( get_option( 'date_format' ), strtotime( $date ) );
+			WC()->session->set( 'wc_delivery_date_formatted', $formatted );
+		}
+
 		wp_send_json_success( array(
 			'available' => true,
 		) );
+	}
+
+	/**
+	 * AJAX endpoint to store selected time slot in session
+	 */
+	public static function save_time_slot() {
+		check_ajax_referer( 'wc-delivery-date-nonce', 'security' );
+		$time = isset( $_POST['time'] ) ? sanitize_text_field( wp_unslash( $_POST['time'] ) ) : '';
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			WC()->session->set( 'wc_delivery_time', $time );
+		}
+		wp_send_json_success();
 	}
 
 	/**

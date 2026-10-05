@@ -376,6 +376,17 @@ class WC_Delivery_Date_Settings {
 	 */
 	public static function get_changelog() {
 		return array(
+			'1.1.7' => array(
+				'date'    => '2026-10-04',
+				'title'   => 'Transactional Emails Delivery Schedule Reliability',
+				'changes' => array(
+					'Fixed missing delivery date in customer and admin transactional emails.',
+					'Added multi-layer persistence saving delivery details in WooCommerce session, order meta, and Store API hooks.',
+					'Hooked woocommerce_checkout_order_processed ensuring delivery data is saved before payment & emails.',
+					'Fixed per-email deduplication key allowing both customer and admin emails in same checkout session.',
+					'Added woocommerce_email_customer_details fallback hook for custom email designer templates.',
+				),
+			),
 			'1.1.6' => array(
 				'date'    => '2026-10-04',
 				'title'   => 'Store API Hook Parameters & Critical Error Fix',

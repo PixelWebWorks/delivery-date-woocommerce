@@ -4,7 +4,7 @@ Tags: woocommerce, delivery date, delivery time, shipping, checkout
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,6 +36,13 @@ Features include:
 3. Configure your rules under WooCommerce > Delivery Date.
 
 == Changelog ==
+
+= 1.1.7 - 2026-10-04 =
+* Fixed missing delivery date in customer and admin transactional emails.
+* Added multi-layer persistence saving delivery details in WooCommerce session, order meta, and Store API hooks.
+* Added woocommerce_checkout_order_processed listener ensuring delivery data is saved before payment & emails.
+* Fixed per-email deduplication key allowing both customer and admin emails in same checkout session.
+* Added woocommerce_email_customer_details fallback hook for custom email designer templates.
 
 = 1.1.6 - 2026-10-04 =
 * Fixed critical error on checkout page caused by argument count mismatch in Store API draft order hooks.

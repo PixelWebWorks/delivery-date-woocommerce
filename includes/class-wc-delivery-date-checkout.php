@@ -20,6 +20,8 @@ class WC_Delivery_Date_Checkout {
 
 		add_action( 'woocommerce_checkout_process', array( __CLASS__, 'validate_checkout_fields' ) );
 		add_action( 'woocommerce_checkout_create_order', array( __CLASS__, 'save_order_delivery_meta' ), 10, 2 );
+		add_action( 'woocommerce_checkout_update_order_meta', array( __CLASS__, 'save_order_delivery_meta_classic' ), 10, 2 );
+		add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'ensure_order_delivery_meta_on_process' ), 10, 3 );
 
 		// WooCommerce Checkout Blocks API hooks (WooCommerce 8.6+)
 		add_action( 'woocommerce_init', array( __CLASS__, 'register_blocks_checkout_fields' ) );
@@ -324,22 +326,29 @@ class WC_Delivery_Date_Checkout {
 			return;
 		}
 
-		if ( isset( $_POST['wc_delivery_date'] ) ) {
-			$raw_date = sanitize_text_field( wp_unslash( $_POST['wc_delivery_date'] ) );
-			if ( ! empty( $raw_date ) ) {
-				$order->update_meta_data( '_delivery_date', $raw_date );
-
-				// Formatted date using WordPress settings (e.g. October 15, 2026)
-				$formatted_date = date_i18n( get_option( 'date_format' ), strtotime( $raw_date ) );
-				$order->update_meta_data( '_delivery_date_formatted', $formatted_date );
-			}
+		$raw_date = isset( $_POST['wc_delivery_date'] ) ? sanitize_text_field( wp_unslash( $_POST['wc_delivery_date'] ) ) : '';
+		if ( empty( $raw_date ) && function_exists( 'WC' ) && WC()->session ) {
+			$raw_date = WC()->session->get( 'wc_delivery_date' );
 		}
 
-		if ( isset( $_POST['wc_delivery_time'] ) ) {
-			$raw_time = sanitize_text_field( wp_unslash( $_POST['wc_delivery_time'] ) );
-			if ( ! empty( $raw_time ) ) {
-				$order->update_meta_data( '_delivery_time', $raw_time );
+		if ( ! empty( $raw_date ) ) {
+			$order->update_meta_data( '_delivery_date', $raw_date );
+			$selected_ts = strtotime( $raw_date );
+			if ( $selected_ts ) {
+				$formatted_date = date_i18n( get_option( 'date_format' ), $selected_ts );
+				$order->update_meta_data( '_delivery_date_formatted', $formatted_date );
 			}
+			$order->update_meta_data( 'wc-delivery-date/delivery-date', $raw_date );
+		}
+
+		$raw_time = isset( $_POST['wc_delivery_time'] ) ? sanitize_text_field( wp_unslash( $_POST['wc_delivery_time'] ) ) : '';
+		if ( empty( $raw_time ) && function_exists( 'WC' ) && WC()->session ) {
+			$raw_time = WC()->session->get( 'wc_delivery_time' );
+		}
+
+		if ( ! empty( $raw_time ) ) {
+			$order->update_meta_data( '_delivery_time', $raw_time );
+			$order->update_meta_data( 'wc-delivery-date/delivery-time', $raw_time );
 		}
 	}
 
@@ -393,27 +402,39 @@ class WC_Delivery_Date_Checkout {
 	}
 
 	/**
-	 * Save Blocks Additional Checkout Fields to Order Meta
+	 * Save Blocks Additional Checkout Fields to Order Meta / Customer / Session
 	 */
 	public static function save_blocks_additional_field( $key = '', $value = '', $group = '', $order = null ) {
-		if ( ! $order instanceof WC_Order && ! $order instanceof WC_Data ) {
+		if ( empty( $key ) || empty( $value ) ) {
 			return;
 		}
 
-		if ( 'wc-delivery-date/delivery-date' === $key && ! empty( $value ) ) {
+		if ( 'wc-delivery-date/delivery-date' === $key ) {
 			$selected_ts = strtotime( $value );
-			if ( $selected_ts ) {
-				$sanitized_date = date( 'Y-m-d', $selected_ts );
+			$sanitized_date = $selected_ts ? date( 'Y-m-d', $selected_ts ) : sanitize_text_field( $value );
+			$formatted = $selected_ts ? date_i18n( get_option( 'date_format' ), $selected_ts ) : $sanitized_date;
+
+			if ( function_exists( 'WC' ) && WC()->session ) {
+				WC()->session->set( 'wc_delivery_date', $sanitized_date );
+				WC()->session->set( 'wc_delivery_date_formatted', $formatted );
+			}
+
+			if ( $order instanceof WC_Data ) {
 				$order->update_meta_data( '_delivery_date', $sanitized_date );
-				$formatted = date_i18n( get_option( 'date_format' ), $selected_ts );
 				$order->update_meta_data( '_delivery_date_formatted', $formatted );
-			} else {
-				$order->update_meta_data( '_delivery_date', sanitize_text_field( $value ) );
+				$order->update_meta_data( 'wc-delivery-date/delivery-date', $sanitized_date );
 			}
 		}
 
-		if ( 'wc-delivery-date/delivery-time' === $key && ! empty( $value ) ) {
-			$order->update_meta_data( '_delivery_time', sanitize_text_field( $value ) );
+		if ( 'wc-delivery-date/delivery-time' === $key ) {
+			$sanitized_time = sanitize_text_field( $value );
+			if ( function_exists( 'WC' ) && WC()->session ) {
+				WC()->session->set( 'wc_delivery_time', $sanitized_time );
+			}
+			if ( $order instanceof WC_Data ) {
+				$order->update_meta_data( '_delivery_time', $sanitized_time );
+				$order->update_meta_data( 'wc-delivery-date/delivery-time', $sanitized_time );
+			}
 		}
 	}
 
@@ -428,19 +449,69 @@ class WC_Delivery_Date_Checkout {
 			return;
 		}
 
-		$additional_fields = array();
+		$raw_date = '';
+		$raw_time = '';
+
+		// 1. Scan Store API request parameters
 		if ( is_object( $request ) && method_exists( $request, 'get_params' ) ) {
 			$params = $request->get_params();
-			if ( ! empty( $params['additional_fields'] ) && is_array( $params['additional_fields'] ) ) {
-				$additional_fields = $params['additional_fields'];
+
+			if ( ! empty( $params['additional_fields']['wc-delivery-date/delivery-date'] ) ) {
+				$raw_date = $params['additional_fields']['wc-delivery-date/delivery-date'];
+			} elseif ( ! empty( $params['customer']['additional_fields']['wc-delivery-date/delivery-date'] ) ) {
+				$raw_date = $params['customer']['additional_fields']['wc-delivery-date/delivery-date'];
+			} elseif ( ! empty( $params['checkout']['additional_fields']['wc-delivery-date/delivery-date'] ) ) {
+				$raw_date = $params['checkout']['additional_fields']['wc-delivery-date/delivery-date'];
+			} elseif ( ! empty( $params['wc-delivery-date/delivery-date'] ) ) {
+				$raw_date = $params['wc-delivery-date/delivery-date'];
+			}
+
+			if ( ! empty( $params['additional_fields']['wc-delivery-date/delivery-time'] ) ) {
+				$raw_time = $params['additional_fields']['wc-delivery-date/delivery-time'];
+			} elseif ( ! empty( $params['customer']['additional_fields']['wc-delivery-date/delivery-time'] ) ) {
+				$raw_time = $params['customer']['additional_fields']['wc-delivery-date/delivery-time'];
+			} elseif ( ! empty( $params['checkout']['additional_fields']['wc-delivery-date/delivery-time'] ) ) {
+				$raw_time = $params['checkout']['additional_fields']['wc-delivery-date/delivery-time'];
+			} elseif ( ! empty( $params['wc-delivery-date/delivery-time'] ) ) {
+				$raw_time = $params['wc-delivery-date/delivery-time'];
 			}
 		}
 
-		$raw_date = ! empty( $additional_fields['wc-delivery-date/delivery-date'] )
-			? sanitize_text_field( $additional_fields['wc-delivery-date/delivery-date'] )
-			: $order->get_meta( 'wc-delivery-date/delivery-date' );
+		// 2. Check Order's own metadata
+		if ( empty( $raw_date ) ) {
+			$raw_date = $order->get_meta( '_delivery_date' );
+			if ( empty( $raw_date ) ) {
+				$raw_date = $order->get_meta( 'wc-delivery-date/delivery-date' );
+			}
+		}
 
-		if ( ! empty( $raw_date ) && empty( $order->get_meta( '_delivery_date' ) ) ) {
+		// 3. Fallback to active WooCommerce session
+		if ( empty( $raw_date ) && function_exists( 'WC' ) && WC()->session ) {
+			$raw_date = WC()->session->get( 'wc_delivery_date' );
+		}
+
+		if ( empty( $raw_time ) && function_exists( 'WC' ) && WC()->session ) {
+			$raw_time = WC()->session->get( 'wc_delivery_time' );
+		}
+
+		// 4. Fallback to WooCommerce customer object
+		if ( empty( $raw_date ) && function_exists( 'WC' ) && WC()->customer ) {
+			$raw_date = WC()->customer->get_meta( '_delivery_date' );
+			if ( empty( $raw_date ) ) {
+				$raw_date = WC()->customer->get_meta( 'wc-delivery-date/delivery-date' );
+			}
+		}
+
+		// 5. Fallback to user meta if logged in
+		if ( empty( $raw_date ) && $order->get_customer_id() > 0 ) {
+			$raw_date = get_user_meta( $order->get_customer_id(), '_delivery_date', true );
+			if ( empty( $raw_date ) ) {
+				$raw_date = get_user_meta( $order->get_customer_id(), 'wc-delivery-date/delivery-date', true );
+			}
+		}
+
+		if ( ! empty( $raw_date ) ) {
+			$raw_date = sanitize_text_field( $raw_date );
 			$selected_ts = strtotime( $raw_date );
 			if ( $selected_ts ) {
 				$sanitized_date = date( 'Y-m-d', $selected_ts );
@@ -450,15 +521,47 @@ class WC_Delivery_Date_Checkout {
 			} else {
 				$order->update_meta_data( '_delivery_date', $raw_date );
 			}
+			$order->update_meta_data( 'wc-delivery-date/delivery-date', $raw_date );
 		}
 
-		$raw_time = ! empty( $additional_fields['wc-delivery-date/delivery-time'] )
-			? sanitize_text_field( $additional_fields['wc-delivery-date/delivery-time'] )
-			: $order->get_meta( 'wc-delivery-date/delivery-time' );
-
-		if ( ! empty( $raw_time ) && empty( $order->get_meta( '_delivery_time' ) ) ) {
+		if ( ! empty( $raw_time ) ) {
 			$order->update_meta_data( '_delivery_time', sanitize_text_field( $raw_time ) );
+			$order->update_meta_data( 'wc-delivery-date/delivery-time', sanitize_text_field( $raw_time ) );
 		}
+	}
+
+	/**
+	 * Classic checkout update order meta hook
+	 *
+	 * @param int $order_id
+	 * @param array $data
+	 */
+	public static function save_order_delivery_meta_classic( $order_id, $data = array() ) {
+		$order = wc_get_order( $order_id );
+		if ( $order instanceof WC_Order ) {
+			self::save_order_delivery_meta( $order, $data );
+			$order->save();
+		}
+	}
+
+	/**
+	 * Ensure Delivery Meta is fully saved on order processed hook
+	 * (Fires right after checkout order creation, before payment & emails)
+	 *
+	 * @param int $order_id
+	 * @param array $posted_data
+	 * @param WC_Order|null $order
+	 */
+	public static function ensure_order_delivery_meta_on_process( $order_id, $posted_data = array(), $order = null ) {
+		if ( ! $order && $order_id ) {
+			$order = wc_get_order( $order_id );
+		}
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+
+		self::save_store_api_order_meta( $order, null );
+		$order->save();
 	}
 
 	/**

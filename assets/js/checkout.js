@@ -34,6 +34,23 @@
 		$(document.body).on('updated_checkout', function () {
 			initDeliveryDatePicker();
 		});
+
+		// Save time slot selection to session via AJAX
+		$(document).on('change', '#wc_delivery_time, select[id*="delivery-time"], select[name*="delivery-time"]', function () {
+			var timeVal = $(this).val();
+			if (typeof wc_delivery_date_params !== 'undefined') {
+				$.ajax({
+					url: wc_delivery_date_params.ajax_url,
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						action: 'wc_delivery_date_save_time_slot',
+						security: wc_delivery_date_params.security,
+						time: timeVal
+					}
+				});
+			}
+		});
 	});
 
 	/**
@@ -246,6 +263,7 @@
 				onClose: function (selectedDates, dateStr, instance) {
 					if (selectedDates && selectedDates.length && instance.altInput) {
 						instance.altInput.value = instance.formatDate(selectedDates[0], 'F j, Y');
+						setNativeValue(inputElement, dateStr);
 					}
 				}
 			});
