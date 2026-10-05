@@ -1,0 +1,239 @@
+/**
+ * Delivery Date Checkout Styling
+ */
+
+.wc-delivery-date-wrapper {
+	margin: 25px 0;
+	padding: 20px;
+	background: #fdfdfd;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.wc-delivery-date-header h3 {
+	margin-top: 0;
+	margin-bottom: 6px;
+	font-size: 1.2rem;
+	font-weight: 600;
+	color: #1e293b;
+}
+
+.wc-delivery-date-description {
+	font-size: 0.9rem;
+	color: #64748b;
+	margin-bottom: 18px;
+}
+
+.wc-delivery-date-fields .form-row {
+	margin-bottom: 15px;
+}
+
+.wc-delivery-date-fields label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+	color: #334155;
+}
+
+.wc-delivery-date-fields .input-text,
+.wc-delivery-date-fields select {
+	width: 100%;
+	padding: 10px 14px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	background-color: #fff;
+	font-size: 14px;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.wc-delivery-date-fields .input-text:focus,
+.wc-delivery-date-fields select:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.wc-delivery-date-fields .input-text[readonly] {
+	background-color: #ffffff;
+	cursor: pointer;
+}
+
+/* Custom styling for Flatpickr calendar */
+.flatpickr-calendar {
+	border-radius: 8px !important;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+	border: 1px solid #e2e8f0 !important;
+	font-family: inherit !important;
+	z-index: 999999 !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected.inRange,
+.flatpickr-day.startRange.inRange,
+.flatpickr-day.endRange.inRange,
+.flatpickr-day.selected:focus,
+.flatpickr-day.startRange:focus,
+.flatpickr-day.endRange:focus,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover,
+.flatpickr-day.selected.prevMonthDay,
+.flatpickr-day.startRange.prevMonthDay,
+.flatpickr-day.endRange.prevMonthDay,
+.flatpickr-day.selected.nextMonthDay,
+.flatpickr-day.startRange.nextMonthDay,
+.flatpickr-day.endRange.nextMonthDay {
+	background: #2563eb !important;
+	border-color: #2563eb !important;
+	color: #fff !important;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+	color: #cbd5e1 !important;
+	text-decoration: line-through;
+	cursor: not-allowed !important;
+	background: transparent !important;
+}
+
+/* ==========================================================================
+   WooCommerce Blocks (Gutenberg) Label Outside & Input Styling
+   ========================================================================== */
+
+/* Container: Flex column layout so label is on top, input box below */
+.wc-block-components-text-input:has(input[id*="delivery-date"]),
+.wc-block-components-text-input:has(input[name*="delivery-date"]),
+.wc-dd-block-wrapper {
+	display: flex !important;
+	flex-direction: column !important;
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	margin-bottom: 20px !important;
+}
+
+/* 1. The Title / Label OUTSIDE and ABOVE the box */
+.wc-block-components-text-input:has(input[id*="delivery-date"]) label,
+.wc-block-components-text-input:has(input[name*="delivery-date"]) label,
+.wc-block-components-text-input label[for*="delivery-date"],
+.wc-dd-outside-label,
+.wc-delivery-date-header h3,
+.wc-delivery-date-fields label[for="wc_delivery_date"] {
+	display: block !important;
+	position: static !important;
+	transform: none !important;
+	order: -1 !important; /* Forces label to render ABOVE the input */
+	font-size: 20px !important;
+	font-weight: 600 !important;
+	color: #1e293b !important;
+	margin-bottom: 10px !important;
+	padding: 0 !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+	pointer-events: auto !important;
+	line-height: 1.4 !important;
+}
+
+/* Hide redundant "(optional)" text in label if automatically added by WooCommerce Blocks */
+.wc-block-components-text-input:has(input[id*="delivery-date"]) label span,
+.wc-block-components-text-input:has(input[name*="delivery-date"]) label span {
+	display: none !important;
+}
+
+/* Hide redundant "Additional order information" section title */
+.wp-block-woocommerce-checkout-additional-information-block > h2,
+.wp-block-woocommerce-checkout-additional-information-block > .wc-block-components-title,
+.wc-block-checkout__additional-fields > .wc-block-components-title {
+	display: none !important;
+}
+
+/* Suppress client-side false-positive validation error bubbles for delivery date */
+.wc-block-components-text-input:has(input[id*="delivery-date"]) .wc-block-components-validation-error,
+.wc-block-components-text-input:has(input[name*="delivery-date"]) .wc-block-components-validation-error {
+	display: none !important;
+}
+
+/* 2. The Input Box (both native and Flatpickr visible input) */
+.wc-block-components-text-input input[id*="delivery-date"],
+.wc-block-components-text-input input[name*="delivery-date"],
+.wc-block-components-text-input .flatpickr-input,
+.wc-dd-input {
+	display: block !important;
+	width: 100% !important;
+	min-height: 48px !important;
+	padding: 10px 14px !important;
+	border: 1px solid #0f172a !important; /* Matches clean dark border of checkout inputs */
+	border-radius: 4px !important;
+	background-color: #ffffff !important;
+	font-size: 15px !important;
+	font-weight: 500 !important;
+	color: #0f172a !important; /* Crisp dark text for selected date */
+	box-sizing: border-box !important;
+	cursor: pointer !important;
+	outline: none !important;
+	transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.wc-block-components-text-input .flatpickr-input:focus,
+.wc-dd-input:focus {
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Placeholder styling: Light and clear when empty */
+.wc-block-components-text-input input[id*="delivery-date"]::placeholder,
+.wc-block-components-text-input .flatpickr-input::placeholder,
+.wc-delivery-date-picker::placeholder {
+	color: #64748b !important;
+	opacity: 1 !important;
+	font-size: 14px !important;
+	font-weight: normal !important;
+}
+
+/* Reorder blocks safely using CSS Flexbox so Delivery Section appears at the VERY TOP of the checkout form */
+.wp-block-woocommerce-checkout-fields-block,
+.wc-block-checkout__main,
+.wc-block-checkout__form,
+form.wc-block-checkout__form {
+	display: flex !important;
+	flex-direction: column !important;
+}
+
+/* Delivery Date & Time position in Contact Information block (AT THE VERY TOP OF CHECKOUT) */
+.wp-block-woocommerce-checkout-contact-information-block,
+.wc-block-checkout__contact-fields {
+	display: flex !important;
+	flex-direction: column !important;
+	order: 1 !important;
+}
+
+.wc-block-components-text-input:has(input[id*="delivery-date"]),
+.wc-block-components-text-input:has(input[name*="delivery-date"]),
+.wc-block-components-select-control:has(select[id*="delivery-time"]),
+.wc-block-components-select-control:has(select[name*="delivery-time"]),
+.wc-dd-block-wrapper {
+	order: -999 !important; /* Forces Delivery fields to render at the VERY TOP above email */
+	margin-bottom: 24px !important;
+	padding-bottom: 16px !important;
+	border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Hide the hidden React input created when altInput is true so only the visible Flatpickr input shows */
+.wc-block-components-text-input input[type="hidden"] {
+	display: none !important;
+}
+
+.wp-block-woocommerce-checkout-shipping-address-block { order: 2 !important; }
+.wp-block-woocommerce-checkout-billing-address-block { order: 3 !important; }
+.wp-block-woocommerce-checkout-shipping-methods-block,
+.wp-block-woocommerce-checkout-shipping-method-block { order: 4 !important; }
+.wp-block-woocommerce-checkout-payment-block,
+.wc-block-checkout__payment-method { order: 5 !important; }
+.wp-block-woocommerce-checkout-order-note-block { order: 6 !important; }
+.wp-block-woocommerce-checkout-terms-block { order: 7 !important; }
+.wp-block-woocommerce-checkout-actions-block { order: 8 !important; }
+
