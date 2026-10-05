@@ -36,17 +36,13 @@ class WC_Delivery_Date_Orders {
 			return;
 		}
 
-		$date = $order->get_meta( '_delivery_date' );
-		$time = $order->get_meta( '_delivery_time' );
-
-		if ( empty( $date ) && empty( $time ) ) {
+		$details = WC_Delivery_Date_Emails::get_order_delivery_details( $order );
+		if ( ! $details ) {
 			return;
 		}
 
-		$formatted_date = $order->get_meta( '_delivery_date_formatted' );
-		if ( empty( $formatted_date ) && ! empty( $date ) ) {
-			$formatted_date = date_i18n( get_option( 'date_format' ), strtotime( $date ) );
-		}
+		$formatted_date = $details['formatted_date'];
+		$time = $details['time'];
 
 		$options = wp_parse_args( get_option( WC_Delivery_Date_Settings::OPTION_NAME, array() ), WC_Delivery_Date_Settings::get_defaults() );
 		?>
@@ -83,8 +79,9 @@ class WC_Delivery_Date_Orders {
 			return;
 		}
 
-		$date = $order->get_meta( '_delivery_date' );
-		$time = $order->get_meta( '_delivery_time' );
+		$details = WC_Delivery_Date_Emails::get_order_delivery_details( $order );
+		$date = $details ? $details['date'] : $order->get_meta( '_delivery_date' );
+		$time = $details ? $details['time'] : $order->get_meta( '_delivery_time' );
 		$options = wp_parse_args( get_option( WC_Delivery_Date_Settings::OPTION_NAME, array() ), WC_Delivery_Date_Settings::get_defaults() );
 		?>
 		<div class="order_data_column" style="clear: both; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
@@ -177,18 +174,14 @@ class WC_Delivery_Date_Orders {
 	 * Helper: render the schedule badge HTML
 	 */
 	private static function render_schedule_badge( $order ) {
-		$date = $order->get_meta( '_delivery_date' );
-		$time = $order->get_meta( '_delivery_time' );
-
-		if ( empty( $date ) && empty( $time ) ) {
+		$details = WC_Delivery_Date_Emails::get_order_delivery_details( $order );
+		if ( ! $details ) {
 			echo '<span style="color: #999;">&mdash;</span>';
 			return;
 		}
 
-		$formatted_date = $order->get_meta( '_delivery_date_formatted' );
-		if ( empty( $formatted_date ) && ! empty( $date ) ) {
-			$formatted_date = date_i18n( get_option( 'date_format' ), strtotime( $date ) );
-		}
+		$formatted_date = $details['formatted_date'];
+		$time = $details['time'];
 
 		echo '<div style="font-size: 13px; line-height: 1.4;">';
 		if ( ! empty( $formatted_date ) ) {

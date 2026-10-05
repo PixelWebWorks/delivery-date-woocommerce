@@ -4,7 +4,7 @@ Tags: woocommerce, delivery date, delivery time, shipping, checkout
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,6 +36,12 @@ Features include:
 3. Configure your rules under WooCommerce > Delivery Date.
 
 == Changelog ==
+
+= 1.1.5 - 2026-10-04 =
+* Added delivery date & time schedule to all customer & admin transactional emails.
+* Integrated woocommerce_email_order_meta_fields filter and woocommerce_email_order_meta fallback hook.
+* Added Store API order meta synchronization (woocommerce_store_api_checkout_update_order_meta).
+* Added multi-key metadata fallback ensuring delivery details are retrieved across all storage mechanisms.
 
 = 1.1.4 - 2026-10-04 =
 * Resolved calendar opening issue on click by eliminating JavaScript syntax error.

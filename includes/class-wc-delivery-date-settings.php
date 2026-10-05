@@ -376,6 +376,16 @@ class WC_Delivery_Date_Settings {
 	 */
 	public static function get_changelog() {
 		return array(
+			'1.1.5' => array(
+				'date'    => '2026-10-04',
+				'title'   => 'Transactional Emails & Order Meta Persistence Enhancement',
+				'changes' => array(
+					'Added delivery date & time schedule to all customer & admin transactional emails.',
+					'Integrated woocommerce_email_order_meta_fields filter and woocommerce_email_order_meta fallback hook.',
+					'Added Store API order meta synchronization (woocommerce_store_api_checkout_update_order_meta).',
+					'Added multi-key metadata fallback ensuring delivery details are retrieved across all storage mechanisms.',
+				),
+			),
 			'1.1.4' => array(
 				'date'    => '2026-10-04',
 				'title'   => 'Calendar Interaction & Delegated Initialization Fix',
