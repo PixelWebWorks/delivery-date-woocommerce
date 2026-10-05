@@ -31,8 +31,8 @@ class WC_Delivery_Date_Orders {
 	 *
 	 * @param WC_Order $order
 	 */
-	public static function display_delivery_info_customer( $order ) {
-		if ( ! $order ) {
+	public static function display_delivery_info_customer( $order = null ) {
+		if ( empty( $order ) ) {
 			return;
 		}
 
@@ -72,10 +72,10 @@ class WC_Delivery_Date_Orders {
 	/**
 	 * Display & Edit Delivery info in Admin Order Details
 	 *
-	 * @param WC_Order $order
+	 * @param WC_Order|null $order
 	 */
-	public static function display_admin_order_meta_fields( $order ) {
-		if ( ! $order ) {
+	public static function display_admin_order_meta_fields( $order = null ) {
+		if ( empty( $order ) || ! $order instanceof WC_Order ) {
 			return;
 		}
 
@@ -152,8 +152,8 @@ class WC_Delivery_Date_Orders {
 	/**
 	 * Render column data in classic order list
 	 */
-	public static function render_delivery_column_classic( $column, $post_id ) {
-		if ( 'wc_delivery_schedule' === $column ) {
+	public static function render_delivery_column_classic( $column = '', $post_id = 0 ) {
+		if ( 'wc_delivery_schedule' === $column && ! empty( $post_id ) ) {
 			$order = wc_get_order( $post_id );
 			if ( $order ) {
 				self::render_schedule_badge( $order );
@@ -164,7 +164,7 @@ class WC_Delivery_Date_Orders {
 	/**
 	 * Render column data in HPOS order list
 	 */
-	public static function render_delivery_column_hpos( $column, $order ) {
+	public static function render_delivery_column_hpos( $column = '', $order = null ) {
 		if ( 'wc_delivery_schedule' === $column && $order instanceof WC_Order ) {
 			self::render_schedule_badge( $order );
 		}
@@ -173,7 +173,12 @@ class WC_Delivery_Date_Orders {
 	/**
 	 * Helper: render the schedule badge HTML
 	 */
-	private static function render_schedule_badge( $order ) {
+	private static function render_schedule_badge( $order = null ) {
+		if ( empty( $order ) ) {
+			echo '<span style="color: #999;">&mdash;</span>';
+			return;
+		}
+
 		$details = WC_Delivery_Date_Emails::get_order_delivery_details( $order );
 		if ( ! $details ) {
 			echo '<span style="color: #999;">&mdash;</span>';

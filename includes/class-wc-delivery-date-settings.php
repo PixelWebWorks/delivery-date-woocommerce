@@ -376,6 +376,15 @@ class WC_Delivery_Date_Settings {
 	 */
 	public static function get_changelog() {
 		return array(
+			'1.1.6' => array(
+				'date'    => '2026-10-04',
+				'title'   => 'Store API Hook Parameters & Critical Error Fix',
+				'changes' => array(
+					'Fixed critical error on checkout page caused by argument count mismatch in Store API draft order hooks.',
+					'Added strict default parameter guards and null safety across all Store API, email, and order hooks.',
+					'Prevented premature order meta save calls on unpersisted draft checkout objects.',
+				),
+			),
 			'1.1.5' => array(
 				'date'    => '2026-10-04',
 				'title'   => 'Transactional Emails & Order Meta Persistence Enhancement',

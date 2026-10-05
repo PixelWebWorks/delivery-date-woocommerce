@@ -107,6 +107,12 @@ All texts shown to customers on the checkout page can be edited in English or an
 
 ## 📜 Version History & Changelog
 
+### Version 1.1.6 (2026-10-04)
+- **Store API Hook Arguments & Critical Error Fix**:
+  - Resolved critical error on checkout page caused by argument count mismatch in Store API draft order hooks.
+  - Hardened callback parameter defaults and null checks across Store API, transactional email, and order hooks.
+  - Eliminated premature order meta persistence on unpersisted draft checkout objects.
+
 ### Version 1.1.5 (2026-10-04)
 - **Transactional Emails & Order Meta Persistence Enhancement**:
   - Added delivery date & time schedule to all customer & admin transactional emails.

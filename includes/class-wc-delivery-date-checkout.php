@@ -25,7 +25,8 @@ class WC_Delivery_Date_Checkout {
 		add_action( 'woocommerce_init', array( __CLASS__, 'register_blocks_checkout_fields' ) );
 		add_action( 'woocommerce_set_additional_field_value', array( __CLASS__, 'save_blocks_additional_field' ), 10, 4 );
 		add_action( 'woocommerce_validate_additional_field', array( __CLASS__, 'validate_blocks_additional_field' ), 10, 3 );
-		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( __CLASS__, 'save_store_api_order_meta' ), 10, 2 );
+		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( __CLASS__, 'save_store_api_order_meta' ), 10, 2 );
+		add_action( 'woocommerce_store_api_checkout_update_order_meta', array( __CLASS__, 'save_store_api_order_meta' ), 10, 1 );
 
 		// Enqueue scripts & styles (Classic & Blocks)
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_checkout_assets' ) );
@@ -313,7 +314,11 @@ class WC_Delivery_Date_Checkout {
 	 * @param WC_Order $order
 	 * @param array $data
 	 */
-	public static function save_order_delivery_meta( $order, $data ) {
+	public static function save_order_delivery_meta( $order = null, $data = array() ) {
+		if ( ! $order instanceof WC_Order ) {
+			return;
+		}
+
 		$options = self::get_options();
 		if ( empty( $options['enabled'] ) ) {
 			return;
@@ -390,8 +395,8 @@ class WC_Delivery_Date_Checkout {
 	/**
 	 * Save Blocks Additional Checkout Fields to Order Meta
 	 */
-	public static function save_blocks_additional_field( $key, $value, $group, $order ) {
-		if ( ! $order instanceof WC_Order ) {
+	public static function save_blocks_additional_field( $key = '', $value = '', $group = '', $order = null ) {
+		if ( ! $order instanceof WC_Order && ! $order instanceof WC_Data ) {
 			return;
 		}
 
@@ -405,31 +410,37 @@ class WC_Delivery_Date_Checkout {
 			} else {
 				$order->update_meta_data( '_delivery_date', sanitize_text_field( $value ) );
 			}
-			$order->save_meta_data();
 		}
 
 		if ( 'wc-delivery-date/delivery-time' === $key && ! empty( $value ) ) {
 			$order->update_meta_data( '_delivery_time', sanitize_text_field( $value ) );
-			$order->save_meta_data();
 		}
 	}
 
 	/**
 	 * Save Store API Order Meta from Checkout Blocks
 	 *
-	 * @param WC_Order $order
-	 * @param WP_REST_Request $request
+	 * @param WC_Order|null $order
+	 * @param WP_REST_Request|null $request
 	 */
-	public static function save_store_api_order_meta( $order, $request ) {
+	public static function save_store_api_order_meta( $order = null, $request = null ) {
 		if ( ! $order instanceof WC_Order ) {
 			return;
 		}
 
-		$params = is_object( $request ) && method_exists( $request, 'get_params' ) ? $request->get_params() : array();
-		$additional_fields = isset( $params['additional_fields'] ) && is_array( $params['additional_fields'] ) ? $params['additional_fields'] : array();
+		$additional_fields = array();
+		if ( is_object( $request ) && method_exists( $request, 'get_params' ) ) {
+			$params = $request->get_params();
+			if ( ! empty( $params['additional_fields'] ) && is_array( $params['additional_fields'] ) ) {
+				$additional_fields = $params['additional_fields'];
+			}
+		}
 
-		if ( ! empty( $additional_fields['wc-delivery-date/delivery-date'] ) ) {
-			$raw_date = sanitize_text_field( $additional_fields['wc-delivery-date/delivery-date'] );
+		$raw_date = ! empty( $additional_fields['wc-delivery-date/delivery-date'] )
+			? sanitize_text_field( $additional_fields['wc-delivery-date/delivery-date'] )
+			: $order->get_meta( 'wc-delivery-date/delivery-date' );
+
+		if ( ! empty( $raw_date ) && empty( $order->get_meta( '_delivery_date' ) ) ) {
 			$selected_ts = strtotime( $raw_date );
 			if ( $selected_ts ) {
 				$sanitized_date = date( 'Y-m-d', $selected_ts );
@@ -441,17 +452,22 @@ class WC_Delivery_Date_Checkout {
 			}
 		}
 
-		if ( ! empty( $additional_fields['wc-delivery-date/delivery-time'] ) ) {
-			$order->update_meta_data( '_delivery_time', sanitize_text_field( $additional_fields['wc-delivery-date/delivery-time'] ) );
-		}
+		$raw_time = ! empty( $additional_fields['wc-delivery-date/delivery-time'] )
+			? sanitize_text_field( $additional_fields['wc-delivery-date/delivery-time'] )
+			: $order->get_meta( 'wc-delivery-date/delivery-time' );
 
-		$order->save_meta_data();
+		if ( ! empty( $raw_time ) && empty( $order->get_meta( '_delivery_time' ) ) ) {
+			$order->update_meta_data( '_delivery_time', sanitize_text_field( $raw_time ) );
+		}
 	}
 
 	/**
 	 * Validate Blocks Additional Checkout Fields on Checkout Block Submission
 	 */
-	public static function validate_blocks_additional_field( WP_Error $errors, $field_key, $field_value ) {
+	public static function validate_blocks_additional_field( $errors = null, $field_key = '', $field_value = '' ) {
+		if ( ! is_wp_error( $errors ) ) {
+			return;
+		}
 		$options = self::get_options();
 		if ( empty( $options['enabled'] ) ) {
 			return;

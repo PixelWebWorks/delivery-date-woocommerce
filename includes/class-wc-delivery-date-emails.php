@@ -37,7 +37,11 @@ class WC_Delivery_Date_Emails {
 	 * @param WC_Order|int $order
 	 * @return array|false
 	 */
-	public static function get_order_delivery_details( $order ) {
+	public static function get_order_delivery_details( $order = null ) {
+		if ( empty( $order ) ) {
+			return false;
+		}
+
 		if ( is_numeric( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -95,12 +99,20 @@ class WC_Delivery_Date_Emails {
 	/**
 	 * Add delivery fields to standard WooCommerce email meta list
 	 *
-	 * @param array    $fields
-	 * @param bool     $sent_to_admin
-	 * @param WC_Order $order
+	 * @param array        $fields
+	 * @param bool         $sent_to_admin
+	 * @param WC_Order|int $order
 	 * @return array
 	 */
-	public static function add_delivery_to_email_meta_fields( $fields, $sent_to_admin, $order ) {
+	public static function add_delivery_to_email_meta_fields( $fields = array(), $sent_to_admin = false, $order = null ) {
+		if ( ! is_array( $fields ) ) {
+			$fields = array();
+		}
+
+		if ( empty( $order ) ) {
+			return $fields;
+		}
+
 		$details = self::get_order_delivery_details( $order );
 		if ( ! $details ) {
 			return $fields;
@@ -131,10 +143,10 @@ class WC_Delivery_Date_Emails {
 	 * @param WC_Order|int $order
 	 * @param bool         $sent_to_admin
 	 * @param bool         $plain_text
-	 * @param WC_Email     $email
+	 * @param WC_Email|string $email
 	 */
-	public static function add_delivery_to_emails( $order, $sent_to_admin = false, $plain_text = false, $email = '' ) {
-		if ( $plain_text ) {
+	public static function add_delivery_to_emails( $order = null, $sent_to_admin = false, $plain_text = false, $email = '' ) {
+		if ( $plain_text || empty( $order ) ) {
 			return;
 		}
 
@@ -200,7 +212,11 @@ class WC_Delivery_Date_Emails {
 	 * @param bool         $plain_text
 	 * @param WC_Email     $email
 	 */
-	public static function add_delivery_to_plain_emails( $order, $sent_to_admin = false, $plain_text = true, $email = '' ) {
+	public static function add_delivery_to_plain_emails( $order = null, $sent_to_admin = false, $plain_text = true, $email = '' ) {
+		if ( empty( $order ) ) {
+			return;
+		}
+
 		$details = self::get_order_delivery_details( $order );
 		if ( ! $details ) {
 			return;

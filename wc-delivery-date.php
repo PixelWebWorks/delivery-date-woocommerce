@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Delivery Date & Time Scheduler
  * Plugin URI:  https://github.com/PixelWebWorks/delivery-date-woocommerce
  * Description: Allows customers to select delivery date and time at checkout with admin capacity limits, lead times, allowed weekdays, and email/order notifications.
- * Version:     1.1.5
+ * Version:     1.1.6
  * Author:      P!xel Web
  * Text Domain: wc-delivery-date
  * Domain Path: /languages
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'WC_DELIVERY_DATE_VERSION', '1.1.5' );
+define( 'WC_DELIVERY_DATE_VERSION', '1.1.6' );
 define( 'WC_DELIVERY_DATE_FILE', __FILE__ );
 define( 'WC_DELIVERY_DATE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WC_DELIVERY_DATE_URL', plugin_dir_url( __FILE__ ) );
