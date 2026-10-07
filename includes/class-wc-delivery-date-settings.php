@@ -376,6 +376,16 @@ class WC_Delivery_Date_Settings {
 	 */
 	public static function get_changelog() {
 		return array(
+			'1.1.8' => array(
+				'date'    => '2026-10-06',
+				'title'   => 'YayMail Email Customizer Integration & Email Deduplication',
+				'changes' => array(
+					'Added native YayMail customizer integration with custom shortcodes [yaymail_custom_shortcode_delivery_date] and [yaymail_custom_shortcode_delivery_details].',
+					'Fixed duplicate delivery date rendering in default WooCommerce transactional emails.',
+					'Added universal shortcodes [wc_delivery_date], [wc_delivery_time], and [wc_delivery_details].',
+					'Added preview fallback support for visual email builder editors when designing templates.',
+				),
+			),
 			'1.1.7' => array(
 				'date'    => '2026-10-04',
 				'title'   => 'Transactional Emails Delivery Schedule Reliability',

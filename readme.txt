@@ -4,7 +4,7 @@ Tags: woocommerce, delivery date, delivery time, shipping, checkout
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -36,6 +36,12 @@ Features include:
 3. Configure your rules under WooCommerce > Delivery Date.
 
 == Changelog ==
+
+= 1.1.8 - 2026-10-06 =
+* Added native YayMail email customizer integration with custom shortcodes ([yaymail_custom_shortcode_delivery_date], [yaymail_custom_shortcode_delivery_details], [yaymail_custom_shortcode_delivery_time]).
+* Fixed duplicate delivery date output in default WooCommerce transactional emails by removing redundant email meta fields hook.
+* Added standard shortcodes [wc_delivery_date], [wc_delivery_time], and [wc_delivery_details] for full compatibility across all email and page builders.
+* Added live preview fallback support for visual email builder editors when designing templates.
 
 = 1.1.7 - 2026-10-04 =
 * Fixed missing delivery date in customer and admin transactional emails.

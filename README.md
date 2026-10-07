@@ -107,6 +107,13 @@ All texts shown to customers on the checkout page can be edited in English or an
 
 ## 📜 Version History & Changelog
 
+### Version 1.1.8 (2026-10-06)
+- **YayMail Integration & Default Email Duplicate Fix**:
+  - Added native YayMail customizer integration with custom shortcodes (`[yaymail_custom_shortcode_delivery_date]`, `[yaymail_custom_shortcode_delivery_details]`, `[yaymail_custom_shortcode_delivery_time]`).
+  - Fixed duplicate delivery date display in default WooCommerce emails by eliminating redundant email meta fields hook.
+  - Added universal WordPress shortcodes (`[wc_delivery_date]`, `[wc_delivery_time]`, `[wc_delivery_details]`) for text blocks across all email and page builders.
+  - Added live preview fallback support for visual email builder editors (YayMail, Kadence, etc.) when designing templates.
+
 ### Version 1.1.7 (2026-10-04)
 - **Transactional Emails Delivery Schedule Reliability**:
   - Fixed missing delivery date in customer and admin transactional emails.
